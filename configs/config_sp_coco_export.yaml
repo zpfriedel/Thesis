@@ -1,0 +1,31 @@
+normalize: True
+export_name: 'exports/superpoint_coco_1'
+weights: 'models/SuperPoint_Coco/round_1/superpoint_coco_weights_15-XX.h5'
+picklefile: 'COCO/coco.pickle'
+labels: False
+export_batch_size: 5
+descriptor_size: 256
+detection_threshold: 0.015  # 0.001
+nms: 4
+top_k: 0 # 600
+preprocessing:
+  resize: [240, 320]
+homography_adaptation:
+  num: 100
+  aggregation: 'sum'
+  filter_counts: 0
+  valid_border_margin: 4
+  homographies:
+    translation: True
+    rotation: True
+    scaling: True
+    perspective: True
+    scaling_amplitude: 0.2
+    perspective_amplitude_x: 0.2
+    perspective_amplitude_y: 0.2
+    allow_artifacts: True
+    patch_ratio: 0.85
+    max_angle: 3.14
+warped_pair:
+  enable: False
+eval_iter: -1

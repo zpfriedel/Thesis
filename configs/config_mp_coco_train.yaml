@@ -1,0 +1,54 @@
+normalize: True
+labels: 'exports/magicpoint_coco_1'
+picklefile: 'COCO/coco_labels_1.pickle'
+log_dir: 'tensorboard/MagicPoint_Coco/round_1'
+checkpoint_model: 'models/MagicPoint_Coco/round_1/magicpoint_coco_20-{epoch:02d}.h5'
+checkpoint_weights: 'models/MagicPoint_Coco/round_1/magicpoint_coco_weights_20-{epoch:02d}.h5'
+checkpoint_optimizer: 'models/MagicPoint_Coco/round_1/magicpoint_coco_optimizer_20-{epoch:02d}.pickle'
+model_visual: '/home/ubuntu/data/magicpoint.png'
+pretrained_model: False
+pretrained_weights: 'models/MagicPoint_Shapes/magicpoint_ss_weights_50-XX.h5'
+pretrained_optimizer: 'models/MagicPoint_Shapes/magicpoint_ss_optimizer_50-XX.pickle'
+train_batch_size: 32
+eval_batch_size: 32
+learning_rate: 0.001
+epochs: 20 # 7
+steps_per_epoch: 2587 # ceil(train size (82783) / batch size)
+validation_steps: 100 # validation size / eval batch size
+validation_size: 3200 # 192
+detection_threshold: 0.001 # 0.015
+nms: 4
+top_k: 0 # 300
+preprocessing:
+  resize: [240, 320]
+augmentation:
+  photometric:
+    enable: True
+    primitives: ['random_brightness', 'random_contrast', 'additive_speckle_noise', 'additive_gaussian_noise',
+                 'additive_shade', 'motion_blur' ]
+    params:
+      random_brightness: {max_abs_change: 50}
+      random_contrast: {strength_range: [0.3, 1.5]}
+      additive_gaussian_noise: {stddev_range: [0, 10]}
+      additive_speckle_noise: {prob_range: [0, 0.0035]}
+      additive_shade:
+        transparency_range: [-0.5, 0.5]
+        kernel_size_range: [100, 150]
+      motion_blur: {max_kernel_size: 3}
+    random_order: True
+  homographic:
+    enable: True
+    params:
+      translation: True
+      rotation: True
+      scaling: True
+      perspective: True
+      scaling_amplitude: 0.2
+      perspective_amplitude_x: 0.2
+      perspective_amplitude_y: 0.2
+      patch_ratio: 0.85
+      max_angle: 1.57
+      allow_artifacts: True
+    valid_border_margin: 4
+warped_pair:
+    enable: False

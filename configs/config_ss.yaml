@@ -1,0 +1,17 @@
+picklefile: 'synthetic_shapes.pickle'
+drawing_primitives: ['draw_lines', 'draw_polygon', 'draw_multiple_polygons', 'draw_ellipses', 'draw_star',
+                     'draw_checkerboard', 'draw_stripes', 'draw_cube', 'gaussian_noise']
+truncate: {draw_ellipses: 0.3, draw_stripes: 0.2, gaussian_noise: 0.1}
+preprocessing:
+  blur_size: 21
+  resize: [120, 160]
+generation:
+  split_sizes: {training: 10000, validation: 250, test: 500}
+  image_size: [960, 1280]
+  random_seed: 0
+  params:
+    generate_background: {min_kernel_size: 150, max_kernel_size: 500, min_rad_ratio: 0.02, max_rad_ratio: 0.031}
+    draw_stripes:
+      transform_params: [0.1, 0.1]
+    draw_multiple_polygons:
+      kernel_boundaries: [50, 100]
