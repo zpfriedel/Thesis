@@ -59,12 +59,12 @@ def homographic_augmentation(data, add_homography=False, **config):
     return ret
 
 
-def add_dummy_valid_mask(data, mode='training', **config):
+def add_dummy_valid_mask(data, mode='training', adjust=False, **config):
     """
     Adds a mask to ignore sections of a warped image
     """
     valid_mask = tf.ones(tf.shape(data['image'])[:2], dtype=tf.int32)
-    if mode == 'validation':
+    if mode == 'validation' and not adjust:
         H, W, margin = tf.constant(config['preprocessing']['resize'][0]),\
                        tf.constant(config['preprocessing']['resize'][1]),\
                        tf.constant(config['augmentation']['homographic']['valid_border_margin'])
@@ -72,6 +72,15 @@ def add_dummy_valid_mask(data, mode='training', **config):
                                                    H - 2 * margin, W - 2 * margin)
         valid_mask = tf.squeeze(tf.squeeze(tf.image.pad_to_bounding_box(valid_mask, margin, margin, H, W), axis=-1),
                                 axis=0)
+    if mode == 'training' and adjust:
+        H, W, margin = tf.constant(config['preprocessing']['resize'][0]), \
+                       tf.constant(config['preprocessing']['resize'][1]), \
+                       tf.constant(config['augmentation']['homographic']['valid_border_margin'])
+        valid_mask = tf.image.crop_to_bounding_box(data['valid_mask'][tf.newaxis, ..., tf.newaxis], margin, margin,
+                                                   H - 2 * margin, W - 2 * margin)
+        valid_mask = tf.squeeze(tf.squeeze(tf.image.pad_to_bounding_box(valid_mask, margin, margin, H, W), axis=-1),
+                                axis=0)
+
     return {**data, 'valid_mask': valid_mask}
 
 
@@ -245,6 +254,8 @@ def get_coco_data(files, split_name, mode, norm, **config):
     # Generate the warped pair
     if config['warped_pair']['enable']:
         assert has_keypoints
+        data = data.map(lambda d: add_dummy_valid_mask(d, mode=split_name, adjust=True, **config),
+                        num_parallel_calls=None)
         warped = data.map(lambda d: homographic_augmentation(d, add_homography=True, **config['warped_pair']),
                           num_parallel_calls=None)
         if is_training and config['augmentation']['photometric']['enable']:
