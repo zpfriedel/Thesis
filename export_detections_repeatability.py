@@ -28,7 +28,7 @@ if mode == 'mp':
                                                        'precision': precision_metric(0),
                                                        'recall': recall_metric(0)})
 else:
-    with open('configs/config_sp_hpatches_export.yaml', 'r') as f:
+    with open('configs/config_sp_hpatches_repeatability.yaml', 'r') as f:
         config = yaml.load(f)
     model = tf.keras.models.load_model(basepath + '/' + config['model'],
                                        custom_objects={'total_loss': total_loss,

@@ -13,7 +13,7 @@ from utils import data_gen_hpatches
 
 basepath = '/home/ubuntu/data'
 
-with open('configs/config_sp_hpatches_export.yaml', 'r') as f:
+with open('configs/config_sp_hpatches_descriptors.yaml', 'r') as f:
     config = yaml.load(f)
 
 model = tf.keras.models.load_model(basepath + '/' + config['model'], custom_objects={'total_loss': total_loss,
