@@ -57,7 +57,7 @@ dataset = export_gen.make_one_shot_iterator().get_next()
 H, W, margin = tf.constant(config['preprocessing']['resize'][0]), tf.constant(config['preprocessing']['resize'][1]),\
                tf.constant(config['valid_border_margin'])
 
-if mode == 'mp_repeatability':
+if mode == 'mp':
     probability1 = model(dataset['image'])
     probability2 = model(dataset['warped_image'])
 else:
