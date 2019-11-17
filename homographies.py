@@ -56,14 +56,16 @@ def homography_adaptation(image, model, config):
         H = sample_homography(shape, **config['homographies'])
         H_inv = invert_homography(H)
         warped = H_transform(image, H, interpolation='BILINEAR')
-        count = H_transform(tf.expand_dims(tf.ones(tf.shape(image)[:3]), -1), H_inv, interpolation='NEAREST')[..., 0]
+        count = H_transform(tf.expand_dims(tf.ones(tf.shape(image)[:3]), -1), H_inv, interpolation='NEAREST')
         mask = H_transform(tf.expand_dims(tf.ones(tf.shape(image)[:3]), -1), H, interpolation='NEAREST')
 
         if config['valid_border_margin']:
             kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (config['valid_border_margin'] * 2,) * 2)
-            kernel[1:2, -1], kernel[6:, -1], kernel[-1, 1:3], kernel[-1, 5:], kernel[0, 3], kernel[2, 0] = \
-                kernel[1:2, -1]*0, kernel[6:, -1]*0, kernel[-1, 1:3]*0, kernel[-1, 5:]*0, 1, 1
+            kernel[-1, 5:], kernel[6:, -1], kernel[-1, 1:3], kernel[1, -1], kernel[2, 0], kernel[0, 3] = \
+                kernel[-1, 5:] * 0, kernel[6:, -1] * 0, kernel[-1, 1:3] * 0, 0, 1, 1
             mask = tf.nn.erosion2d(mask, tf.cast(tf.constant(kernel)[..., tf.newaxis], dtype=tf.float32),
+                                   [1, 1, 1, 1], [1, 1, 1, 1], 'SAME')[..., 0] + 1.
+            count = tf.nn.erosion2d(count, tf.to_float(tf.constant(kernel)[..., tf.newaxis]),
                                     [1, 1, 1, 1], [1, 1, 1, 1], 'SAME')[..., 0] + 1.
 
         # Predict detection probabilities
@@ -269,8 +271,8 @@ def compute_valid_mask(image_shape, homography, erosion_radius=0):
         if erosion_radius == 2:
             kernel[0, 1], kernel[3, 0], kernel[3, 3] = 1, 0, 0
         elif erosion_radius == 4:
-            kernel[1:2, -1], kernel[6:, -1], kernel[-1, 1:3], kernel[-1, 5:], kernel[0, 3], kernel[2, 0] = \
-                kernel[1:2, -1] * 0, kernel[6:, -1] * 0, kernel[-1, 1:3] * 0, kernel[-1, 5:] * 0, 1, 1
+            kernel[-1, 5:], kernel[6:, -1], kernel[-1, 1:3], kernel[1, -1], kernel[2, 0], kernel[0, 3] = \
+                kernel[-1, 5:]*0, kernel[6:, -1]*0, kernel[-1, 1:3]*0, 0, 1, 1
         mask = tf.nn.erosion2d(
                 mask[tf.newaxis, ..., tf.newaxis],
                 tf.cast(tf.constant(kernel)[..., tf.newaxis], dtype=tf.float32),

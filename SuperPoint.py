@@ -5,7 +5,9 @@ from pathlib import Path
 from tensorflow.python.client import timeline
 from utils import data_gen_coco, ModelCheckpointOptimizer
 from model_utils import total_loss, precision_metric, recall_metric, warped_precision_metric, warped_recall_metric,\
-    encoder, encoder_build, detector_head, detector_build, descriptor_head, descriptor_build
+    threshold_precision_metric, threshold_recall_metric, warped_threshold_precision_metric,\
+    warped_threshold_recall_metric, repeatability_metric, encoder, encoder_build, detector_head, detector_build,\
+    descriptor_head, descriptor_build
 
 
 config = tf.ConfigProto()
@@ -60,7 +62,10 @@ run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=config['learning_rate']), loss=total_loss,
               metrics=[precision_metric(det_img['pred']), recall_metric(det_img['pred']),
-                       warped_precision_metric(det_warped_img['pred']), warped_recall_metric(det_warped_img['pred'])],
+                       warped_precision_metric(det_warped_img['pred']), warped_recall_metric(det_warped_img['pred']),
+                       threshold_precision_metric(det_img['pred']), threshold_recall_metric(det_img['pred']),
+                       warped_threshold_precision_metric(det_warped_img['pred']), warped_threshold_recall_metric(det_warped_img['pred']),
+                       repeatability_metric(det_img['pred'], det_warped_img['pred'])],
               options=run_options, run_metadata=run_metadata)
 
 if not config['pretrained_model']:

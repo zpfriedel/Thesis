@@ -4,8 +4,8 @@ import tensorflow as tf
 from pathlib import Path
 from tensorflow.python.client import timeline
 from utils import data_gen_ss, data_gen_coco, ModelCheckpointOptimizer
-from model_utils import detector_loss, precision_metric, recall_metric,\
-    encoder, encoder_build, detector_head, detector_build
+from model_utils import detector_loss, precision_metric, recall_metric, threshold_precision_metric,\
+    threshold_recall_metric, encoder, encoder_build, detector_head, detector_build
 
 
 config = tf.ConfigProto()
@@ -60,7 +60,8 @@ tf.keras.utils.plot_model(model, config['model_visual'], show_shapes=True)
 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
 run_metadata = tf.RunMetadata()
 model.compile(optimizer=tf.keras.optimizers.Adam(lr=config['learning_rate']), loss=detector_loss,
-              metrics=[precision_metric(det['pred']), recall_metric(det['pred'])],
+              metrics=[precision_metric(det['pred']), recall_metric(det['pred']),
+                       threshold_precision_metric(det['pred']), threshold_recall_metric(det['pred'])],
               options=run_options, run_metadata=run_metadata)
 
 if not config['pretrained_model']:

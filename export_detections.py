@@ -7,7 +7,8 @@ import tensorflow as tf
 import yaml
 from pathlib import Path
 from tqdm import tqdm
-from model_utils import detector_loss, precision_metric, recall_metric, box_nms
+from model_utils import detector_loss, precision_metric, recall_metric, threshold_precision_metric,\
+    threshold_recall_metric, box_nms
 from utils import data_gen_coco
 from homographies import homography_adaptation
 
@@ -33,8 +34,9 @@ with open('configs/config_mp_coco_export.yaml', 'r') as f:
 
 model = tf.keras.models.load_model(basepath + '/' + config['model'],
                                    custom_objects={'detector_loss': detector_loss,
-                                                   'precision': precision_metric(0),
-                                                   'recall': recall_metric(0)})
+                                                   'precision': precision_metric(0), 'recall': recall_metric(0),
+                                                   'threshold_precision': threshold_precision_metric(0),
+                                                   'threshold_recall': threshold_recall_metric(0)})
 model.summary()
 
 picklefile = Path(basepath, config['picklefile'])
@@ -53,9 +55,15 @@ pbar = tqdm(total=config['eval_iter'] if config['eval_iter'] > 0 else None)
 export_gen = data_gen_coco(files, 'export', batch_size=config['export_batch_size'], norm=config['normalize'], **config)
 data = export_gen.make_one_shot_iterator().get_next()
 
+H, W, margin = tf.constant(config['preprocessing']['resize'][0]), tf.constant(config['preprocessing']['resize'][1]),\
+               tf.constant(config['homography_adaptation']['valid_border_margin'])
+
 outputs = homography_adaptation(data['image'], model, config['homography_adaptation'])
 prob = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['detection_threshold'],
                                    keep_top_k=config['top_k']), outputs['prob'])
+prob = tf.image.crop_to_bounding_box(prob[..., tf.newaxis], margin, margin, H - 2*margin, W - 2*margin)
+prob = tf.squeeze(tf.image.pad_to_bounding_box(prob, margin, margin, H, W), axis=-1)
+
 prediction = tf.cast(tf.greater_equal(prob, config['detection_threshold']), dtype=tf.int32)
 
 tf.keras.backend.get_session().graph.finalize()

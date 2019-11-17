@@ -1,5 +1,5 @@
 import tensorflow as tf
-from homographies import warp_points
+from homographies import warp_points, flat2mat
 
 
 def convBlock(conv_layer, bn_layer, input):
@@ -262,7 +262,7 @@ def precision_metric(nms_pred):
         """
         labels = tf.cast(y_true[..., 0], dtype=tf.int32)
         mask = tf.cast(y_true[..., 1], dtype=tf.int32)
-        prec = tf.reduce_sum((mask * nms_pred) * labels) / tf.reduce_sum(mask * nms_pred)
+        prec = tf.reduce_sum(mask * (nms_pred * labels)) / tf.reduce_sum(mask * nms_pred)
 
         return prec
 
@@ -282,7 +282,7 @@ def recall_metric(nms_pred):
         """
         labels = tf.cast(y_true[..., 0], dtype=tf.int32)
         mask = tf.cast(y_true[..., 1], dtype=tf.int32)
-        rec = tf.reduce_sum((mask * nms_pred) * labels) / tf.reduce_sum(labels)
+        rec = tf.reduce_sum(mask * (nms_pred * labels)) / tf.reduce_sum(mask * labels)
 
         return rec
 
@@ -302,7 +302,7 @@ def warped_precision_metric(nms_pred):
         """
         labels = tf.cast(y_true[..., 2], dtype=tf.int32)
         mask = tf.cast(y_true[..., 3], dtype=tf.int32)
-        prec = tf.reduce_sum((mask * nms_pred) * labels) / tf.reduce_sum(mask * nms_pred)
+        prec = tf.reduce_sum(mask * (nms_pred * labels)) / tf.reduce_sum(mask * nms_pred)
 
         return prec
 
@@ -322,7 +322,7 @@ def warped_recall_metric(nms_pred):
         """
         labels = tf.cast(y_true[..., 2], dtype=tf.int32)
         mask = tf.cast(y_true[..., 3], dtype=tf.int32)
-        rec = tf.reduce_sum((mask * nms_pred) * labels) / tf.reduce_sum(labels)
+        rec = tf.reduce_sum(mask * (nms_pred * labels)) / tf.reduce_sum(mask * labels)
 
         return rec
 

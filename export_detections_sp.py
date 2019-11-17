@@ -60,9 +60,15 @@ pbar = tqdm(total=config['eval_iter'] if config['eval_iter'] > 0 else None)
 export_gen = data_gen_coco(files, 'export', batch_size=config['export_batch_size'], norm=config['normalize'], **config)
 data = export_gen.make_one_shot_iterator().get_next()
 
+H, W, margin = tf.constant(config['preprocessing']['resize'][0]), tf.constant(config['preprocessing']['resize'][1]),\
+               tf.constant(config['homography_adaptation']['valid_border_margin'])
+
 outputs = homography_adaptation(data['image'], model, config['homography_adaptation'])
 prob = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['detection_threshold'],
                                    keep_top_k=config['top_k']), outputs['prob'])
+prob = tf.image.crop_to_bounding_box(prob[..., tf.newaxis], margin, margin, H - 2*margin, W - 2*margin)
+prob = tf.squeeze(tf.image.pad_to_bounding_box(prob, margin, margin, H, W), axis=-1)
+
 prediction = tf.cast(tf.greater_equal(prob, config['detection_threshold']), dtype=tf.int32)
 
 tf.keras.backend.get_session().graph.finalize()

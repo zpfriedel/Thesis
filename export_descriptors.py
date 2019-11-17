@@ -7,7 +7,8 @@ import yaml
 from pathlib import Path
 from tqdm import tqdm
 from model_utils import total_loss, precision_metric, recall_metric, warped_precision_metric, warped_recall_metric,\
-    box_nms
+    threshold_precision_metric, threshold_recall_metric, warped_threshold_precision_metric,\
+    warped_threshold_recall_metric, repeatability_metric, box_nms
 from utils import data_gen_hpatches
 
 
@@ -16,11 +17,17 @@ basepath = '/home/ubuntu/data'
 with open('configs/config_sp_hpatches_descriptors.yaml', 'r') as f:
     config = yaml.load(f)
 
-model = tf.keras.models.load_model(basepath + '/' + config['model'], custom_objects={'total_loss': total_loss,
-                                                                     'precision': precision_metric(0),
-                                                                     'recall': recall_metric(0),
-                                                                     'warped_precision': warped_precision_metric(0),
-                                                                     'warped_recall': warped_recall_metric(0)})
+model = tf.keras.models.load_model(basepath + '/' + config['model'],
+                                   custom_objects={'total_loss': total_loss,
+                                                   'precision': precision_metric(0),
+                                                   'recall': recall_metric(0),
+                                                   'warped_precision': warped_precision_metric(0),
+                                                   'warped_recall': warped_recall_metric(0),
+                                                   'threshold_precision': threshold_precision_metric(0),
+                                                   'threshold_recall': threshold_recall_metric(0),
+                                                   'warped_threshold_precision': warped_threshold_precision_metric(0),
+                                                   'warped_threshold_recall': warped_threshold_recall_metric(0),
+                                                   'repeatability': repeatability_metric(0, 0)})
 model.summary()
 
 picklefile = Path(basepath, config['picklefile'])
