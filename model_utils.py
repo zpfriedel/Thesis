@@ -329,6 +329,167 @@ def warped_recall_metric(nms_pred):
     return warped_recall
 
 
+def threshold_precision_metric(nms_pred):
+
+    def threshold_precision(y_true, y_pred):
+
+        def modify_labels(label):
+            kps = tf.cast(tf.where(label > 0), dtype=tf.float32)
+            boxes = tf.cond(tf.shape(label)[0] < 240,
+                            lambda: tf.concat([(kps-0.01) / [120, 160], (kps+2) / [120, 160]], axis=1),
+                            lambda: tf.concat([(kps-0.01) / [240, 320], (kps+2) / [240, 320]], axis=1))
+            mask = (boxes >= 0) & (boxes <= tf.cast(tf.concat([tf.shape(label) - 1, tf.shape(label) - 1], axis=-1),
+                                                    dtype=tf.float32))
+            boxes = tf.boolean_mask(boxes, tf.reduce_all(mask, -1))
+            label = tf.image.draw_bounding_boxes(tf.cast(label[tf.newaxis, ..., tf.newaxis], dtype=tf.float32),
+                                                 boxes[tf.newaxis, ...])
+            label = tf.cast(tf.squeeze(label, axis=[0, -1]), dtype=tf.int32)
+            return label
+
+        labels = tf.cast(y_true[..., 0], dtype=tf.int32)
+        mask = tf.cast(y_true[..., 1], dtype=tf.int32)
+        thresh_labels = tf.map_fn(modify_labels, labels)
+        prec = tf.reduce_sum(mask * (nms_pred * thresh_labels)) / tf.reduce_sum(mask * nms_pred)
+
+        return prec
+
+    return threshold_precision
+
+
+def threshold_recall_metric(nms_pred):
+
+    def threshold_recall(y_true, y_pred):
+
+        def modify_labels(label):
+            kps = tf.cast(tf.where(label > 0), dtype=tf.float32)
+            boxes = tf.cond(tf.shape(label)[0] < 240,
+                            lambda: tf.concat([(kps-0.01) / [120, 160], (kps+2) / [120, 160]], axis=1),
+                            lambda: tf.concat([(kps-0.01) / [240, 320], (kps+2) / [240, 320]], axis=1))
+            mask = (boxes >= 0) & (boxes <= tf.cast(tf.concat([tf.shape(label) - 1, tf.shape(label) - 1], axis=-1),
+                                                    dtype=tf.float32))
+            boxes = tf.boolean_mask(boxes, tf.reduce_all(mask, -1))
+            label = tf.image.draw_bounding_boxes(tf.cast(label[tf.newaxis, ..., tf.newaxis], dtype=tf.float32),
+                                                 boxes[tf.newaxis, ...])
+            label = tf.cast(tf.squeeze(label, axis=[0, -1]), dtype=tf.int32)
+            return label
+
+        labels = tf.cast(y_true[..., 0], dtype=tf.int32)
+        mask = tf.cast(y_true[..., 1], dtype=tf.int32)
+        thresh_labels = tf.map_fn(modify_labels, labels)
+        rec = tf.reduce_sum(mask * (nms_pred * thresh_labels)) / tf.reduce_sum(mask * labels)
+
+        return rec
+
+    return threshold_recall
+
+
+def warped_threshold_precision_metric(nms_pred):
+
+    def warped_threshold_precision(y_true, y_pred):
+
+        def modify_labels(label):
+            kps = tf.cast(tf.where(label > 0), dtype=tf.float32)
+            boxes = tf.cond(tf.shape(label)[0] < 240,
+                            lambda: tf.concat([(kps-0.01) / [120, 160], (kps+2) / [120, 160]], axis=1),
+                            lambda: tf.concat([(kps-0.01) / [240, 320], (kps+2) / [240, 320]], axis=1))
+            mask = (boxes >= 0) & (boxes <= tf.cast(tf.concat([tf.shape(label) - 1, tf.shape(label) - 1], axis=-1),
+                                                    dtype=tf.float32))
+            boxes = tf.boolean_mask(boxes, tf.reduce_all(mask, -1))
+            label = tf.image.draw_bounding_boxes(tf.cast(label[tf.newaxis, ..., tf.newaxis], dtype=tf.float32),
+                                                 boxes[tf.newaxis, ...])
+            label = tf.cast(tf.squeeze(label, axis=[0, -1]), dtype=tf.int32)
+            return label
+
+        labels = tf.cast(y_true[..., 2], dtype=tf.int32)
+        mask = tf.cast(y_true[..., 3], dtype=tf.int32)
+        thresh_labels = tf.map_fn(modify_labels, labels)
+        prec = tf.reduce_sum(mask * (nms_pred * thresh_labels)) / tf.reduce_sum(mask * nms_pred)
+
+        return prec
+
+    return warped_threshold_precision
+
+
+def warped_threshold_recall_metric(nms_pred):
+
+    def warped_threshold_recall(y_true, y_pred):
+
+        def modify_labels(label):
+            kps = tf.cast(tf.where(label > 0), dtype=tf.float32)
+            boxes = tf.cond(tf.shape(label)[0] < 240,
+                            lambda: tf.concat([(kps-0.01) / [120, 160], (kps+2) / [120, 160]], axis=1),
+                            lambda: tf.concat([(kps-0.01) / [240, 320], (kps+2) / [240, 320]], axis=1))
+            mask = (boxes >= 0) & (boxes <= tf.cast(tf.concat([tf.shape(label) - 1, tf.shape(label) - 1], axis=-1),
+                                                    dtype=tf.float32))
+            boxes = tf.boolean_mask(boxes, tf.reduce_all(mask, -1))
+            label = tf.image.draw_bounding_boxes(tf.cast(label[tf.newaxis, ..., tf.newaxis], dtype=tf.float32),
+                                                 boxes[tf.newaxis, ...])
+            label = tf.cast(tf.squeeze(label, axis=[0, -1]), dtype=tf.int32)
+            return label
+
+        labels = tf.cast(y_true[..., 2], dtype=tf.int32)
+        mask = tf.cast(y_true[..., 3], dtype=tf.int32)
+        thresh_labels = tf.map_fn(modify_labels, labels)
+        rec = tf.reduce_sum(mask * (nms_pred * thresh_labels)) / tf.reduce_sum(mask * labels)
+
+        return rec
+
+    return warped_threshold_recall
+
+
+def warp_keypoints(keypoints, H):
+    num_points = tf.shape(keypoints)[0]
+    homogeneous_points = tf.concat([keypoints, tf.ones((num_points, 1))], axis=1)
+    warped_points = tf.matmul(homogeneous_points, tf.transpose(H))
+    return warped_points[:, :2] / warped_points[:, 2:]
+
+
+def keep_true_keypoints(points, H, shape):
+    warped_points = warp_keypoints(tf.concat([points[:, 1][..., tf.newaxis], points[:, 0][..., tf.newaxis]],
+                                             axis=-1), H)
+    warped_points = tf.concat([warped_points[:, 1][..., tf.newaxis], warped_points[:, 0][..., tf.newaxis]], axis=-1)
+    mask = (warped_points >= 0) & (warped_points <= tf.cast(shape - 1, dtype=tf.float32))
+    points = tf.boolean_mask(points, tf.reduce_all(mask, -1))
+    return points
+
+
+def repeatability_metric(nms_pred, warped_nms_pred):
+
+    def repeatability(y_true, y_pred):
+
+        def calc_repeatability(label, pred, warped_pred):
+            homography = tf.reshape(label[:8, 0, 4], [1, 8])
+            H = flat2mat(homography)[0]
+            keypoints = tf.cast(tf.where(pred > 0), dtype=tf.float32)
+            keypoints = tf.concat([keypoints[:, 1][..., tf.newaxis], keypoints[:, 0][..., tf.newaxis]], axis=-1)
+            true_warped_keypoints = warp_keypoints(keypoints, H)
+            true_warped_keypoints = tf.concat([true_warped_keypoints[:, 1][..., tf.newaxis],
+                                               true_warped_keypoints[:, 0][..., tf.newaxis]], axis=-1)
+            mask = (true_warped_keypoints >= 0) & (true_warped_keypoints <= tf.cast(tf.shape(pred) - 1,
+                                                                                    dtype=tf.float32))
+            true_warped_keypoints = tf.boolean_mask(true_warped_keypoints, tf.reduce_all(mask, -1))
+            warped_keypoints = tf.cast(tf.where(warped_pred > 0), dtype=tf.float32)
+            warped_keypoints = keep_true_keypoints(warped_keypoints, tf.linalg.inv(H), tf.shape(pred))
+
+            N1 = tf.shape(true_warped_keypoints)[0]
+            N2 = tf.shape(warped_keypoints)[0]
+            true_warped_keypoints = tf.expand_dims(true_warped_keypoints, axis=1)
+            warped_keypoints = tf.expand_dims(warped_keypoints, axis=0)
+            norm = tf.linalg.norm(true_warped_keypoints - warped_keypoints, axis=2)
+            min1 = tf.reduce_min(norm, axis=1)
+            count1 = tf.reduce_sum(tf.cast((min1 <= 3), dtype=tf.int32))
+            min2 = tf.reduce_min(norm, axis=0)
+            count2 = tf.reduce_sum(tf.cast((min2 <= 3), dtype=tf.int32))
+            return tf.cast(((count1 + count2) / (N1 + N2)), dtype=tf.float32)
+
+        rep = tf.map_fn(lambda x: calc_repeatability(x[0], x[1], x[2]), (y_true, nms_pred, warped_nms_pred),
+                        dtype=tf.float32)
+
+        return tf.reduce_mean(rep)
+
+    return repeatability
+
+
 def box_nms(prob, size, iou=0.1, min_prob=0.01, keep_top_k=0):
     """
     Performs NMS on the heatmap (prob) by considering hypothetical
