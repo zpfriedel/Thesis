@@ -460,7 +460,9 @@ def repeatability_metric(nms_pred, warped_nms_pred):
         def calc_repeatability(label, pred, warped_pred):
             homography = tf.reshape(label[:8, 0, 4], [1, 8])
             H = flat2mat(homography)[0]
-            keypoints = tf.cast(tf.where(pred > 0), dtype=tf.float32)
+            pred_mask = tf.cast(label[..., 1], dtype=tf.int32)
+            warped_pred_mask = tf.cast(label[..., 3], dtype=tf.int32)
+            keypoints = tf.cast(tf.where(pred * pred_mask > 0), dtype=tf.float32)
             keypoints = tf.concat([keypoints[:, 1][..., tf.newaxis], keypoints[:, 0][..., tf.newaxis]], axis=-1)
             true_warped_keypoints = warp_keypoints(keypoints, H)
             true_warped_keypoints = tf.concat([true_warped_keypoints[:, 1][..., tf.newaxis],
@@ -468,7 +470,7 @@ def repeatability_metric(nms_pred, warped_nms_pred):
             mask = (true_warped_keypoints >= 0) & (true_warped_keypoints <= tf.cast(tf.shape(pred) - 1,
                                                                                     dtype=tf.float32))
             true_warped_keypoints = tf.boolean_mask(true_warped_keypoints, tf.reduce_all(mask, -1))
-            warped_keypoints = tf.cast(tf.where(warped_pred > 0), dtype=tf.float32)
+            warped_keypoints = tf.cast(tf.where(warped_pred * warped_pred_mask > 0), dtype=tf.float32)
             warped_keypoints = keep_true_keypoints(warped_keypoints, tf.linalg.inv(H), tf.shape(pred))
 
             N1 = tf.shape(true_warped_keypoints)[0]
