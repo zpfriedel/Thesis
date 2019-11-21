@@ -1,8 +1,8 @@
 normalize: True
 model: 'models/SuperPoint_Coco/final_round/superpoint/superpoint_coco_15-XX.h5'
 picklefile: 'HPatches/hpatches-v.pickle'
-export_name: 'exports/superpoint_hpatches_descriptors/superpoint/v'
-h5_export_name: 'exports/superpoint_hpatches_descriptors/superpoint/v/descriptors.h5'
+export_name: 'exports/superpoint_descriptors/final_round/v'
+h5_export_name: 'exports/superpoint_descriptors/final_round/v/descriptors.h5'
 alteration: 'v'  # 'all' 'i' 'v'
 dataset: 'hpatches'
 valid_border_margin: 4

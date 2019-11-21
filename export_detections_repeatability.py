@@ -42,7 +42,9 @@ else:
                                                        'threshold_recall': threshold_recall_metric(0),
                                                        'warped_threshold_precision': warped_threshold_precision_metric(0),
                                                        'warped_threshold_recall': warped_threshold_recall_metric(0),
-                                                       'repeatability': repeatability_metric(0, 0)})
+                                                       'repeatability': repeatability_metric(np.zeros((1, 1), np.int32),
+                                                                                             np.zeros((1, 1), np.int32))
+                                                       })
 model.summary()
 
 picklefile = Path(basepath, config['picklefile'])

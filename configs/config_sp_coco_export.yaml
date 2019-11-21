@@ -1,5 +1,5 @@
 normalize: True
-export_name: 'exports/superpoint_coco_1'
+export_name: 'exports/superpoint_coco'
 weights: 'models/SuperPoint_Coco/round_1/superpoint_coco_weights_15-XX.h5'
 picklefile: 'COCO/coco.pickle'
 labels: False
