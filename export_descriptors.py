@@ -12,6 +12,11 @@ from model_utils import total_loss, precision_metric, recall_metric, warped_prec
 from utils import data_gen_hpatches
 
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
+tf.keras.backend.set_session(sess)
+
 basepath = '/home/ubuntu/data'
 
 with open('configs/config_sp_hpatches_descriptors.yaml', 'r') as f:

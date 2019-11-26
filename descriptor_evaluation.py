@@ -129,7 +129,7 @@ def homography_estimation(exper_name, keep_k_points=1000,
     image and a warped version of it, plus the homography linking the 2 images.
     Outputs the correctness score.
     """
-    exper = '/home/ubuntu/data/exports' + '/' + exper_name
+    exper = '/home/ubuntu/data/exports' + '/' + exper_name + '/descriptors.h5'
     with h5py.File(exper, 'r') as f:
         paths = list(f.keys())
         correctness = []
@@ -154,7 +154,7 @@ def get_homography_matches(exper_name, keep_k_points=1000,
     a mask of inliers points in the first image, and a list of matches meaning that
     keypoints1[i] is matched with keypoints2[matches[i]]
     """
-    exper = '/home/ubuntu/data/exports' + '/' + exper_name
+    exper = '/home/ubuntu/data/exports' + '/' + exper_name + '/descriptors.h5'
     with h5py.File(exper, 'r') as f:
         paths = list(f.keys())
         outputs = []
