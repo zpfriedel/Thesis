@@ -1,4 +1,5 @@
 normalize: True
+events: False
 model: 'models/MagicPoint_Coco/round_1/magicpoint_coco_20-XX.h5'
 picklefile: 'HPatches/hpatches-v.pickle'
 export_name: 'exports/magicpoint_repeatability/round_1/v'

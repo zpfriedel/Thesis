@@ -84,10 +84,8 @@ probability1 = tf.squeeze(tf.depth_to_space(probability1[:, :, :, :-1], block_si
 probability2 = tf.nn.softmax(probability2, axis=-1)
 probability2 = tf.squeeze(tf.depth_to_space(probability2[:, :, :, :-1], block_size=8), axis=-1)
 
-probability1 = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['detection_threshold'],
-                                   keep_top_k=config['top_k']), probability1)
-probability2 = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['detection_threshold'],
-                                   keep_top_k=config['top_k']), probability2)
+if config['events']:
+    probability2 = probability2 * dataset['homography']['mask']
 
 probability1 = tf.image.crop_to_bounding_box(probability1[..., tf.newaxis], margin, margin,
                                              H1 - 2*margin, W1 - 2*margin)
@@ -96,15 +94,22 @@ probability2 = tf.image.crop_to_bounding_box(probability2[..., tf.newaxis], marg
                                              H2 - 2*margin, W2 - 2*margin)
 probability2 = tf.squeeze(tf.image.pad_to_bounding_box(probability2, margin, margin, H2, W2), axis=-1)
 
+probability1 = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['detection_threshold'],
+                                   keep_top_k=config['top_k']), probability1)
+probability2 = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['detection_threshold'],
+                                   keep_top_k=config['top_k']), probability2)
+
 tf.keras.backend.get_session().graph.finalize()
 
 i = 0
 while True:
     try:
-        prob1, prob2, image, warped_image, homography = tf.keras.backend.get_session().run([probability1, probability2,
-                                                                                           dataset['image'],
-                                                                                           dataset['warped_image'],
-                                                                                           dataset['homography']])
+        if not config['events']:
+            prob1, prob2, image, warped_image, homography = tf.keras.backend.get_session().run(
+                [probability1, probability2, dataset['image'], dataset['warped_image'], dataset['homography']])
+        else:
+            prob1, prob2, image, warped_image, homography = tf.keras.backend.get_session().run(
+                [probability1, probability2, dataset['image'], dataset['warped_image'], dataset['homography']['H']])
         data = {'image': np.squeeze(image, axis=0), 'warped_image': np.squeeze(warped_image, axis=0),
                 'homography': np.squeeze(homography, axis=0)}
         pred = {'prob': np.squeeze(prob1, axis=0), 'warped_prob': np.squeeze(prob2, axis=0),

@@ -5,7 +5,8 @@ import os
 import pickle
 import tensorflow as tf
 import photometric_augmentation as photaug
-from homographies import sample_homography, compute_valid_mask, warp_points, filter_points
+from homographies import sample_homography, compute_valid_mask, warp_points, filter_points, H_transform, mat2flat,\
+    invert_homography
 
 
 def photometric_augmentation(data, **config):
@@ -366,6 +367,19 @@ def get_hpatches_data(files, norm, **config):
         H = tf.matmul(warped_translation, tf.matmul(down_scale, tf.matmul(H, tf.matmul(up_scale, translation))))
         return H
 
+    def add_mask(homography):
+        H = tf.cast(homography, dtype=tf.float32)
+        H_new = H * tf.constant([[1., 1., 1.], [1., 1., 1.], [0.9, 0.9, 0.9]])
+        H_flat = invert_homography(mat2flat(H_new[tf.newaxis, ...]))
+        size = tf.constant([216, 288])
+        mask = H_transform(tf.ones(size), H_flat, interpolation='NEAREST')
+        kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (config['valid_border_margin']*2,)*2)
+        kernel[0, 1], kernel[3, 0], kernel[3, 3] = 1, 0, 0
+        mask = tf.nn.erosion2d(mask[tf.newaxis, ..., tf.newaxis], tf.cast(tf.constant(kernel)[..., tf.newaxis],
+                                                                          dtype=tf.float32),
+                               [1, 1, 1, 1], [1, 1, 1, 1], 'SAME')[0, ..., 0] + 1.
+        return {'H': H, 'mask': mask}
+
     images = tf.data.Dataset.from_tensor_slices(files['image_paths'])
     images = images.map(lambda path: tf.py_func(_read_image, [path], tf.uint8))
     warped_images = tf.data.Dataset.from_tensor_slices(files['warped_image_paths'])
@@ -376,12 +390,13 @@ def get_hpatches_data(files, norm, **config):
         warped_shapes = warped_images.map(_get_shape)
         homographies = tf.data.Dataset.zip({'homography': homographies, 'shape': shapes, 'warped_shape': warped_shapes})
         homographies = homographies.map(_adapt_homography_to_preprocessing)
+    if config['events']:
+        homographies = homographies.map(add_mask)
 
     images = images.map(lambda d: _preprocess(d, norm=norm))
     warped_images = warped_images.map(lambda d: _preprocess(d, norm=norm))
 
-    data = tf.data.Dataset.zip({'image': images, 'warped_image': warped_images,
-                                'homography': homographies})
+    data = tf.data.Dataset.zip({'image': images, 'warped_image': warped_images, 'homography': homographies})
 
     return data
 

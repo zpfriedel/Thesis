@@ -1,4 +1,5 @@
 normalize: True
+events: False
 model: 'models/SuperPoint_Coco/final_round/superpoint/superpoint_coco_15-XX.h5'
 picklefile: 'HPatches/hpatches-v.pickle'
 export_name: 'exports/superpoint_descriptors/final_round/v'
