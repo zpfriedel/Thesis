@@ -332,7 +332,7 @@ def get_hpatches_data(files, norm, **config):
         if config['preprocessing']['resize']:
             image = ratio_preserving_resize(image, **config['preprocessing'])
         if norm:
-            image = tf.cast(image / n, dtype=tf.float32)
+            image = tf.cast(tf.cast(image, dtype=tf.float32) / n, dtype=tf.float32)
         else:
             image = tf.cast(image, dtype=tf.float32)
         return image

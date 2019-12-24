@@ -63,8 +63,13 @@ pbar = tqdm(total=config['eval_iter'] if config['eval_iter'] > 0 else None)
 export_gen = data_gen_hpatches(files, norm=config['normalize'], **config)
 dataset = export_gen.make_one_shot_iterator().get_next()
 
-H, W, margin = tf.constant(config['preprocessing']['resize'][0]), tf.constant(config['preprocessing']['resize'][1]),\
-               tf.constant(config['valid_border_margin'])
+if config['preprocessing']['resize']:
+    H1, W1, margin = tf.constant(config['preprocessing']['resize'][0]), tf.constant(config['preprocessing']['resize'][1]),\
+                   tf.constant(config['valid_border_margin'])
+    H2, W2 = H1, W1
+else:
+    H1, W1, H2, W2, margin = tf.constant(240), tf.constant(320), tf.constant(216), tf.constant(288),\
+                             tf.constant(config['valid_border_margin'])
 
 if mode == 'mp':
     probability1 = model(dataset['image'])
@@ -85,11 +90,11 @@ probability2 = tf.map_fn(lambda p: box_nms(p, config['nms'], min_prob=config['de
                                    keep_top_k=config['top_k']), probability2)
 
 probability1 = tf.image.crop_to_bounding_box(probability1[..., tf.newaxis], margin, margin,
-                                             H - 2*margin, W - 2*margin)
-probability1 = tf.squeeze(tf.image.pad_to_bounding_box(probability1, margin, margin, H, W), axis=-1)
+                                             H1 - 2*margin, W1 - 2*margin)
+probability1 = tf.squeeze(tf.image.pad_to_bounding_box(probability1, margin, margin, H1, W1), axis=-1)
 probability2 = tf.image.crop_to_bounding_box(probability2[..., tf.newaxis], margin, margin,
-                                             H - 2*margin, W - 2*margin)
-probability2 = tf.squeeze(tf.image.pad_to_bounding_box(probability2, margin, margin, H, W), axis=-1)
+                                             H2 - 2*margin, W2 - 2*margin)
+probability2 = tf.squeeze(tf.image.pad_to_bounding_box(probability2, margin, margin, H2, W2), axis=-1)
 
 tf.keras.backend.get_session().graph.finalize()
 

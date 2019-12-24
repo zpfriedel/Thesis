@@ -1,0 +1,3 @@
+picklefile: 'COCO/events.pickle'
+alteration: 'all'  # 'all' 'i' 'v'
+dataset: 'events'
