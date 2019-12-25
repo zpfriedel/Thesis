@@ -75,7 +75,12 @@ if mode == 'mp':
     probability1 = model(dataset['image'])
     probability2 = model(dataset['warped_image'])
 else:
-    outputs = model([dataset['image'], dataset['warped_image']])
+    if not config['events']:
+        outputs = model([dataset['image'], dataset['warped_image']])
+    else:
+        warped_image = tf.pad(dataset['warped_image'][0, ..., 0], paddings=tf.constant([[0, 24], [0, 32]]),
+                              mode='CONSTANT', constant_values=0)[tf.newaxis, ..., tf.newaxis]
+        outputs = model([dataset['image'], warped_image])
     probability1 = outputs[..., :65]
     probability2 = outputs[..., 65:130]
 
@@ -85,6 +90,8 @@ probability2 = tf.nn.softmax(probability2, axis=-1)
 probability2 = tf.squeeze(tf.depth_to_space(probability2[:, :, :, :-1], block_size=8), axis=-1)
 
 if config['events']:
+    if mode == 'sp':
+        probability2 = probability2[:, :216, :288]
     probability2 = probability2 * dataset['homography']['mask']
 
 probability1 = tf.image.crop_to_bounding_box(probability1[..., tf.newaxis], margin, margin,

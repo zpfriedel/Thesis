@@ -61,7 +61,12 @@ else:
     H1, W1, H2, W2, margin = tf.constant(240), tf.constant(320), tf.constant(216), tf.constant(288),\
                              tf.constant(config['valid_border_margin'])
 
-outputs = model([dataset['image'], dataset['warped_image']])
+if not config['events']:
+    outputs = model([dataset['image'], dataset['warped_image']])
+else:
+    warped_image = tf.pad(dataset['warped_image'][0, ..., 0], paddings=tf.constant([[0, 24], [0, 32]]),
+                          mode='CONSTANT', constant_values=0)[tf.newaxis, ..., tf.newaxis]
+    outputs = model([dataset['image'], warped_image])
 
 probability1 = tf.nn.softmax(outputs[..., :65], axis=-1)
 probability1 = tf.squeeze(tf.depth_to_space(probability1[:, :, :, :-1], block_size=8), axis=-1)
@@ -69,6 +74,7 @@ probability2 = tf.nn.softmax(outputs[..., 65:130], axis=-1)
 probability2 = tf.squeeze(tf.depth_to_space(probability2[:, :, :, :-1], block_size=8), axis=-1)
 
 if config['events']:
+    probability2 = probability2[:, :216, :288]
     probability2 = probability2 * dataset['homography']['mask']
 
 probability1 = tf.image.crop_to_bounding_box(probability1[..., tf.newaxis], margin, margin,
