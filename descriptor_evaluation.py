@@ -133,15 +133,19 @@ def homography_estimation(exper_name, keep_k_points=1000,
     with h5py.File(exper, 'r') as f:
         paths = list(f.keys())
         correctness = []
+        num_matches = []
         pbar = tqdm(total=None, leave=False)
         for path in paths:
             data = f[path]
             estimates = compute_homography(data, keep_k_points, correctness_thresh, orb)
             correctness.append(estimates['correctness'])
+            inliers = np.squeeze(estimates['inliers'].astype(bool))
+            matches = np.array(estimates['matches'])[inliers]
+            num_matches.append(len(matches))
             pbar.update(1)
         pbar.close()
 
-    return np.mean(correctness)
+    return (np.mean(correctness), np.mean(num_matches))
 
 
 def get_homography_matches(exper_name, keep_k_points=1000,
@@ -212,7 +216,7 @@ experiments = []
 
 num_images = 5
 for e in experiments:
-    orb = True if e[:3] == 'orb' else False
+    orb = True if e[:3] == 'orb' or e[:4] == 'fast' else False
     outputs = get_homography_matches(e, keep_k_points=1000, correctness_thresh=3, num_images=num_images, orb=orb)
     for output in outputs:
         img = draw_matches(output) / 255.
@@ -222,6 +226,7 @@ thresholds = [1, 3, 5]
 for thresh in thresholds:
     print("Correctness threshold = " + str(thresh) + ":")
     for exp in experiments:
-        orb = True if exp[:3] == 'orb' else False
-        correctness = homography_estimation(exp, keep_k_points=1000, correctness_thresh=thresh, orb=orb)
+        orb = True if exp[:3] == 'orb' or exp[:4] == 'fast' else False
+        correctness, avg_matches = homography_estimation(exp, keep_k_points=1000, correctness_thresh=thresh, orb=orb)
         print('{}: {}'.format(exp, correctness))
+        print('{}: {}'.format(exp, avg_matches))
